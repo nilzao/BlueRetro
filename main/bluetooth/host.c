@@ -214,6 +214,23 @@ static int32_t bt_host_store_le_keys_on_file(struct bt_host_le_link_keys *data) 
     return ret;
 }
 
+static void serial_task(void *param) {
+	while (1) {
+		char command[8];
+		if (fgets(command, sizeof(command), stdin)) {
+			printf("received: %s\n", command);
+			serial_bridge(command);
+		}
+		// I dunno what's going on, but it works for now:
+		vTaskDelay(16 / portTICK_PERIOD_MS);
+	}
+}
+
+void serial_task_init(void) {
+	xTaskCreatePinnedToCore(&serial_task, "serial_task", 2048, NULL, 12, NULL, 0);
+}
+
+
 static void bt_tx_task(void *param) {
     size_t packet_len;
     uint8_t *packet;

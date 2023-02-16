@@ -129,6 +129,7 @@ struct bt_hci_pkt {
 extern struct bt_hci_pkt bt_hci_pkt_tmp;
 
 void bt_host_disconnect_all(void);
+void serial_task_init(void);
 int32_t bt_host_get_new_dev(struct bt_dev **device);
 int32_t bt_host_get_active_dev(struct bt_dev **device);
 int32_t bt_host_get_hid_init_dev(struct bt_dev **device);

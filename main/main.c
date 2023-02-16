@@ -100,6 +100,9 @@ static void wl_init_task(void *arg) {
         printf("Bluetooth init fail!\n");
     }
 #endif
+#ifdef CONFIG_BLUERETRO_BT_DISABLE
+    serial_task_init();
+#endif
 
 #ifndef CONFIG_BLUERETRO_QEMU
     mc_init();

@@ -207,6 +207,143 @@ static void adapter_fb_stop_cb(void* arg) {
     adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
 }
 
+
+void adapter_serial_init(struct generic_ctrl *ctrl_input,
+		struct generic_ctrl *ctrl_output) {
+	uint32_t *mask_tmp = (uint32_t*) malloc(sizeof(uint32_t) * 4);
+	mask_tmp[0] = 0xFFFF0FFF;
+	mask_tmp[1] = 0;
+	mask_tmp[2] = 0;
+	mask_tmp[3] = 0;
+	ctrl_input->mask = (const uint32_t *) mask_tmp;
+	uint32_t *desc_tmp = (uint32_t*) malloc(sizeof(uint32_t) * 4);
+	desc_tmp[0] = 0x110000FF;
+	desc_tmp[1] = 0;
+	desc_tmp[2] = 0;
+	desc_tmp[3] = 0;
+	ctrl_input->desc = (const uint32_t *) desc_tmp;
+
+	struct in_cfg *in_cfg = &config.in_cfg[0];
+	in_cfg->map_size = 1;
+	for (uint32_t i = 0; i < ADAPTER_MAPPING_MAX; i++) {
+		in_cfg->map_cfg[i] = (struct map_cfg ) { i, i, 0, 100, 50, 135, 0, 0 };
+	}
+
+	ctrl_input->index = 0;
+	for (int i = 0; i < ADAPTER_MAX_AXES; i++) {
+		struct ctrl_meta *meta_tmp = (struct ctrl_meta*) malloc(
+				sizeof(struct ctrl_meta));
+		meta_tmp->neutral = 127;
+		meta_tmp->deadzone = 0;
+		meta_tmp->abs_btn_thrs = 0;
+		meta_tmp->abs_max = 127;
+		meta_tmp->sign = 0;
+		meta_tmp->polarity = 0;
+		meta_tmp->size_min = 0;
+		meta_tmp->size_max = 0;
+		meta_tmp->relative = 0;
+		ctrl_input->axes[i].meta = meta_tmp;
+		ctrl_input->axes[i].value = 0;
+		ctrl_input->axes[i].relative = 0;
+		ctrl_input->axes[i].cnt_mask = 0;
+	}
+	for (int i = 0; i < 4; i++) {
+		ctrl_input->btns[i].value = 0;
+		ctrl_input->map_mask[i] = 0;
+		for (int i2 = 0; i2 < 32; i2++) {
+			ctrl_input->btns[i].cnt_mask[i2] = 0;
+		}
+	}
+	for (int i = 0; i < WIRED_MAX_DEV; i++) {
+		ctrl_output[i].index = i;
+	}
+}
+
+
+void print_cfg(struct in_cfg *in_cfg) {
+
+	printf("inicio-----------------------------\n");
+	printf("in_cfg:\n");
+	printf("in_cfg->bt_dev_id: %d, ", in_cfg->bt_dev_id);
+	printf("in_cfg->bt_subdev_id: %d, ", in_cfg->bt_subdev_id);
+	printf("in_cfg->map_size: %d, ", in_cfg->map_size);
+	printf("in_cfg->map_cfg:\n");
+	for (int i = 0; i < ADAPTER_MAPPING_MAX; ++i) {
+		printf(".\nin_cfg->map_cfg[%d]->src_btn: %d\n", i,
+				in_cfg->map_cfg[i].src_btn);
+		printf("in_cfg->map_cfg[%d]->dst_btn: %d\n", i,
+				in_cfg->map_cfg[i].dst_btn);
+		printf("in_cfg->map_cfg[%d]->dst_id: %d\n", i,
+				in_cfg->map_cfg[i].dst_id);
+		printf("in_cfg->map_cfg[%d]->perc_max: %d\n", i,
+				in_cfg->map_cfg[i].perc_max);
+		printf("in_cfg->map_cfg[%d]->perc_threshold: %d\n", i,
+				in_cfg->map_cfg[i].perc_threshold);
+		printf("in_cfg->map_cfg[%d]->perc_deadzone: %d\n", i,
+				in_cfg->map_cfg[i].perc_deadzone);
+		printf("in_cfg->map_cfg[%d]->turbo: %d\n", i, in_cfg->map_cfg[i].turbo);
+		printf("in_cfg->map_cfg[%d]->algo: %d\n", i, in_cfg->map_cfg[i].algo);
+	}
+	printf("\nconfig.out_cfg[i]:\n");
+	for (int i = 0; i < WIRED_MAX_DEV; ++i) {
+		printf("config.out_cfg[%d].dev_mode: %d \n", i, config.out_cfg[i].dev_mode);
+		printf("config.out_cfg[%d].acc_mode: %d \n", i, config.out_cfg[i].acc_mode);
+	}
+	printf("-----------------------------fim\n");
+}
+
+void print_ctrl(struct generic_ctrl *ctrl_input) {
+	printf("inicio-----------------------------\n");
+	printf("ctrl_input->index: %ld\n", ctrl_input->index);
+	for (int i = 0; i < 4; ++i) {
+		printf("ctrl_input->mask[%d]: %lX\n",i ,ctrl_input->mask[i]);
+		printf("ctrl_input->desc[%d]: %lX\n",i ,ctrl_input->desc[i]);
+	}
+	printf(".\n\nctrl_input->map_mask: \n");
+	for (int i = 0; i < 4; i++) {
+		printf("ctrl_input->map_mask[%d]-> %ld, ", i, ctrl_input->map_mask[i]);
+	}
+	printf("\n\nctrl_input->btns: \n");
+	for (int i = 0; i < 4; i++) {
+		printf("\nctrl_input->btns[%d]->value %ld:\n", i,
+				ctrl_input->btns[i].value);
+		printf("ctrl_input->btns[%d]->cnt_mask: \n", i);
+		for (int i2 = 0; i2 < 32; ++i2) {
+			printf("ctrl_input->btns[%d]->cnt_mask[%d]: %ld, \n", i, i2,
+					ctrl_input->btns[i].cnt_mask[i2]);
+		}
+	}
+	printf("\naxes\n");
+	for (int i = 0; i < 6; i++) {
+		printf("\nctrl_input->axes[%d]->value: %ld, ", i,
+				ctrl_input->axes[i].value);
+		printf("ctrl_input->axes[%d]->relative: %ld, \n", i,
+				ctrl_input->axes[i].relative);
+		printf("ctrl_input->axes[%d]->meta\n", i);
+		printf("ctrl_input->axes[%d]->meta->neutral: %ld \n", i,
+				ctrl_input->axes[i].meta->neutral);
+		printf("ctrl_input->axes[%d]->meta->deadzone: %ld \n", i,
+				ctrl_input->axes[i].meta->deadzone);
+		printf("ctrl_input->axes[%d]->meta->abs_btn_thrs: %ld \n", i,
+				ctrl_input->axes[i].meta->abs_btn_thrs);
+		printf("ctrl_input->axes[%d]->meta->abs_max: %ld \n", i,
+				ctrl_input->axes[i].meta->abs_max);
+		printf("ctrl_input->axes[%d]->meta->sign: %ld \n", i,
+				ctrl_input->axes[i].meta->sign);
+		printf("ctrl_input->axes[%d]->meta->polarity: %ld \n", i,
+				ctrl_input->axes[i].meta->polarity);
+		printf("ctrl_input->axes[%d]->meta->size_min: %ld \n", i,
+				ctrl_input->axes[i].meta->size_min);
+		printf("ctrl_input->axes[%d]->meta->size_max: %ld \n", i,
+				ctrl_input->axes[i].meta->size_max);
+		printf("ctrl_input->axes[%d]->meta->relative: %ld \n", i,
+				ctrl_input->axes[i].meta->relative);
+		printf("ctrl_input->axes[%d]->cnt_mask: %lu, \n", i,
+				ctrl_input->axes[i].cnt_mask);
+	}
+	printf("-----------------------------fim\n");
+}
+
 int32_t btn_id_to_axis(uint8_t btn_id) {
     switch (btn_id) {
         case PAD_LX_LEFT:
@@ -306,6 +443,93 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     }
 }
 
+void serial_to_input(char cmd_char[8], struct generic_ctrl *ctrl_input) {
+	ctrl_input->btns[0].value = 0;
+	ctrl_input->axes[0].value = 0;
+	ctrl_input->axes[1].value = 0;
+	switch (cmd_char[0]) {
+	case 'a': // left
+		ctrl_input->btns[0].value = 0x100;
+		break;
+	case 's': // down
+		ctrl_input->btns[0].value = 0x400;
+		break;
+	case 'd': // right
+		ctrl_input->btns[0].value = 0x200;
+		break;
+	case 'w': // up
+		ctrl_input->btns[0].value = 0x800;
+		break;
+	case 'z': // select
+		ctrl_input->btns[0].value = 0x200000;
+		break;
+	case 'x': // start
+		ctrl_input->btns[0].value = 0x100000;
+		break;
+	case 'k': // A
+		ctrl_input->btns[0].value = 0x40000;
+		break;
+	case 'l': // B
+		ctrl_input->btns[0].value = 0x20000;
+		break;
+	case 'i': // X
+		ctrl_input->btns[0].value = 0x10000;
+		break;
+	case 'o': // Y
+		ctrl_input->btns[0].value = 0x80000;
+		break;
+	case 'f': // axix-left
+		ctrl_input->axes[0].value = 0xFFFFFF80;
+		break;
+	case 'g': // axix-down
+		ctrl_input->axes[1].value = 0x0000007F;
+		break;
+	case 'h': // axix-right
+		ctrl_input->axes[0].value = 0x0000007F;
+		break;
+	case 't': // axix-up
+		ctrl_input->axes[1].value = 0xFFFFFF80;
+		break;
+	case 'q': // LB
+		ctrl_input->btns[0].value = 0x2000000;
+		break;
+	case 'e': // RB
+		ctrl_input->btns[0].value = 0x20000000;
+		break;
+	default:
+		break;
+	}
+}
+
+/**
+ * steps to reproduce:
+ * build (sdk hw1), flash, monitor
+ * pair some BT gamepad, wait to sync
+ * send bytes to serial port
+ */
+void serial_bridge(char bytes[8]) {
+	if(bytes[0] == '0'){
+		adapter_serial_init(ctrl_input, ctrl_output);
+	}
+	/*
+	 *  serial_to_input changes:
+	 *  ctrl_input->btns[0].value,
+	 *  ctrl_input->axes[0].value and ctrl_input->axes[1].value
+	 *  with some logic faking the BT gamepad that I have
+	 */
+	serial_to_input(bytes, ctrl_input);
+//	print_ctrl(ctrl_input);
+	adapter_debug_print(ctrl_input); // printf debug
+	if (wired_meta_init(ctrl_output)) {
+		/* Unsupported system */
+		return;
+	}
+	adapter_mapping(&config.in_cfg[0]);
+	adapter_debug_print(&ctrl_output[0]); // printf debug
+	printf("--------------------\n");
+	wired_from_generic(config.out_cfg[0].dev_mode, &ctrl_output[0], &wired_adapter.data[0]);
+}
+
 void adapter_bridge(struct bt_data *bt_data) {
     uint32_t out_mask = 0;
 
@@ -331,6 +555,8 @@ void adapter_bridge(struct bt_data *bt_data) {
                 /* Unsupported system */
                 return;
             }
+
+            print_cfg(&config.in_cfg[bt_data->base.pids->out_idx]);
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
 
@@ -418,4 +644,8 @@ void adapter_init(void) {
     if (wired_adapter.input_q_hdl == NULL) {
         ets_printf("# %s: Failed to create fb queue\n", __FUNCTION__);
     }
+
+#ifdef CONFIG_BLUERETRO_BT_DISABLE
+    adapter_serial_init(ctrl_input, ctrl_output);
+#endif
 }
