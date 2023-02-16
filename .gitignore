@@ -62,3 +62,7 @@ build/
 __pycache__/
 *.py[cod]
 
+# Eclipse IDE
+.cproject
+.project
+.settings/
