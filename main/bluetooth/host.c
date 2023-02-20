@@ -216,9 +216,13 @@ static int32_t bt_host_store_le_keys_on_file(struct bt_host_le_link_keys *data) 
 
 static void serial_task(void *param) {
 	while (1) {
-		char command[8];
+		char command[9];
 		if (fgets(command, sizeof(command), stdin)) {
-			printf("received: %s\n", command);
+			printf("received: ");
+			for (int i = 0; i < 9; i++) {
+				printf("[0x%02X]", command[i]);
+			}
+			printf("\n");
 			serial_bridge(command);
 		}
 		// I dunno what's going on, but it works for now:

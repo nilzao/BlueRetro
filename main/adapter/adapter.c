@@ -259,91 +259,6 @@ void adapter_serial_init(struct generic_ctrl *ctrl_input,
 	}
 }
 
-
-void print_cfg(struct in_cfg *in_cfg) {
-
-	printf("inicio-----------------------------\n");
-	printf("in_cfg:\n");
-	printf("in_cfg->bt_dev_id: %d, ", in_cfg->bt_dev_id);
-	printf("in_cfg->bt_subdev_id: %d, ", in_cfg->bt_subdev_id);
-	printf("in_cfg->map_size: %d, ", in_cfg->map_size);
-	printf("in_cfg->map_cfg:\n");
-	for (int i = 0; i < ADAPTER_MAPPING_MAX; ++i) {
-		printf(".\nin_cfg->map_cfg[%d]->src_btn: %d\n", i,
-				in_cfg->map_cfg[i].src_btn);
-		printf("in_cfg->map_cfg[%d]->dst_btn: %d\n", i,
-				in_cfg->map_cfg[i].dst_btn);
-		printf("in_cfg->map_cfg[%d]->dst_id: %d\n", i,
-				in_cfg->map_cfg[i].dst_id);
-		printf("in_cfg->map_cfg[%d]->perc_max: %d\n", i,
-				in_cfg->map_cfg[i].perc_max);
-		printf("in_cfg->map_cfg[%d]->perc_threshold: %d\n", i,
-				in_cfg->map_cfg[i].perc_threshold);
-		printf("in_cfg->map_cfg[%d]->perc_deadzone: %d\n", i,
-				in_cfg->map_cfg[i].perc_deadzone);
-		printf("in_cfg->map_cfg[%d]->turbo: %d\n", i, in_cfg->map_cfg[i].turbo);
-		printf("in_cfg->map_cfg[%d]->algo: %d\n", i, in_cfg->map_cfg[i].algo);
-	}
-	printf("\nconfig.out_cfg[i]:\n");
-	for (int i = 0; i < WIRED_MAX_DEV; ++i) {
-		printf("config.out_cfg[%d].dev_mode: %d \n", i, config.out_cfg[i].dev_mode);
-		printf("config.out_cfg[%d].acc_mode: %d \n", i, config.out_cfg[i].acc_mode);
-	}
-	printf("-----------------------------fim\n");
-}
-
-void print_ctrl(struct generic_ctrl *ctrl_input) {
-	printf("inicio-----------------------------\n");
-	printf("ctrl_input->index: %ld\n", ctrl_input->index);
-	for (int i = 0; i < 4; ++i) {
-		printf("ctrl_input->mask[%d]: %lX\n",i ,ctrl_input->mask[i]);
-		printf("ctrl_input->desc[%d]: %lX\n",i ,ctrl_input->desc[i]);
-	}
-	printf(".\n\nctrl_input->map_mask: \n");
-	for (int i = 0; i < 4; i++) {
-		printf("ctrl_input->map_mask[%d]-> %ld, ", i, ctrl_input->map_mask[i]);
-	}
-	printf("\n\nctrl_input->btns: \n");
-	for (int i = 0; i < 4; i++) {
-		printf("\nctrl_input->btns[%d]->value %ld:\n", i,
-				ctrl_input->btns[i].value);
-		printf("ctrl_input->btns[%d]->cnt_mask: \n", i);
-		for (int i2 = 0; i2 < 32; ++i2) {
-			printf("ctrl_input->btns[%d]->cnt_mask[%d]: %ld, \n", i, i2,
-					ctrl_input->btns[i].cnt_mask[i2]);
-		}
-	}
-	printf("\naxes\n");
-	for (int i = 0; i < 6; i++) {
-		printf("\nctrl_input->axes[%d]->value: %ld, ", i,
-				ctrl_input->axes[i].value);
-		printf("ctrl_input->axes[%d]->relative: %ld, \n", i,
-				ctrl_input->axes[i].relative);
-		printf("ctrl_input->axes[%d]->meta\n", i);
-		printf("ctrl_input->axes[%d]->meta->neutral: %ld \n", i,
-				ctrl_input->axes[i].meta->neutral);
-		printf("ctrl_input->axes[%d]->meta->deadzone: %ld \n", i,
-				ctrl_input->axes[i].meta->deadzone);
-		printf("ctrl_input->axes[%d]->meta->abs_btn_thrs: %ld \n", i,
-				ctrl_input->axes[i].meta->abs_btn_thrs);
-		printf("ctrl_input->axes[%d]->meta->abs_max: %ld \n", i,
-				ctrl_input->axes[i].meta->abs_max);
-		printf("ctrl_input->axes[%d]->meta->sign: %ld \n", i,
-				ctrl_input->axes[i].meta->sign);
-		printf("ctrl_input->axes[%d]->meta->polarity: %ld \n", i,
-				ctrl_input->axes[i].meta->polarity);
-		printf("ctrl_input->axes[%d]->meta->size_min: %ld \n", i,
-				ctrl_input->axes[i].meta->size_min);
-		printf("ctrl_input->axes[%d]->meta->size_max: %ld \n", i,
-				ctrl_input->axes[i].meta->size_max);
-		printf("ctrl_input->axes[%d]->meta->relative: %ld \n", i,
-				ctrl_input->axes[i].meta->relative);
-		printf("ctrl_input->axes[%d]->cnt_mask: %lu, \n", i,
-				ctrl_input->axes[i].cnt_mask);
-	}
-	printf("-----------------------------fim\n");
-}
-
 int32_t btn_id_to_axis(uint8_t btn_id) {
     switch (btn_id) {
         case PAD_LX_LEFT:
@@ -443,62 +358,76 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     }
 }
 
-void serial_to_input(char cmd_char[8], struct generic_ctrl *ctrl_input) {
+void serial_to_btn(char cmd_char[9], struct generic_ctrl *ctrl_input) {
 	ctrl_input->btns[0].value = 0;
-	ctrl_input->axes[0].value = 0;
-	ctrl_input->axes[1].value = 0;
-	switch (cmd_char[0]) {
-	case 'a': // left
-		ctrl_input->btns[0].value = 0x100;
-		break;
-	case 's': // down
-		ctrl_input->btns[0].value = 0x400;
-		break;
-	case 'd': // right
-		ctrl_input->btns[0].value = 0x200;
-		break;
-	case 'w': // up
-		ctrl_input->btns[0].value = 0x800;
-		break;
-	case 'z': // select
-		ctrl_input->btns[0].value = 0x200000;
-		break;
-	case 'x': // start
-		ctrl_input->btns[0].value = 0x100000;
-		break;
-	case 'k': // A
+	ctrl_input->axes[4].value = 0;
+	ctrl_input->axes[5].value = 0;
+	int cmd = (cmd_char[1]) << 8 | cmd_char[2];
+	printf("btn cmd[0x%04X]\n", cmd);
+	switch (cmd) {
+	case 0x1: //PAD_RB_DOWN
 		ctrl_input->btns[0].value = 0x40000;
 		break;
-	case 'l': // B
+	case 0x2: //PAD_RB_RIGHT
 		ctrl_input->btns[0].value = 0x20000;
 		break;
-	case 'i': // X
+	case 0x4: //PAD_RB_LEFT
 		ctrl_input->btns[0].value = 0x10000;
 		break;
-	case 'o': // Y
+	case 0x8: //PAD_RB_UP
 		ctrl_input->btns[0].value = 0x80000;
 		break;
-	case 'f': // axix-left
-		ctrl_input->axes[0].value = 0xFFFFFF80;
-		break;
-	case 'g': // axix-down
-		ctrl_input->axes[1].value = 0x0000007F;
-		break;
-	case 'h': // axix-right
-		ctrl_input->axes[0].value = 0x0000007F;
-		break;
-	case 't': // axix-up
-		ctrl_input->axes[1].value = 0xFFFFFF80;
-		break;
-	case 'q': // LB
+	case 0x10: //PAD_LS
 		ctrl_input->btns[0].value = 0x2000000;
 		break;
-	case 'e': // RB
+	case 0x20: //PAD_RS
 		ctrl_input->btns[0].value = 0x20000000;
+		break;
+	case 0x40: //PAD_LM
+		ctrl_input->axes[4].value = 0xFF;
+		break;
+	case 0x80: //PAD_RM
+		ctrl_input->axes[5].value = 0xFF;
+		break;
+	case 0x100: //PAD_MM
+		ctrl_input->btns[0].value = 0x200000;
+		break;
+	case 0x200: //PAD_MS
+		ctrl_input->btns[0].value = 0x100000;
+		break;
+	case 0x400: //PAD_LJ
+		ctrl_input->btns[0].value = 0x8000000;
+		break;
+	case 0x800: //PAD_RJ
+		ctrl_input->btns[0].value = 0x80000000;
+		break;
+	case 0x1000: //PAD_LD_UP
+		ctrl_input->btns[0].value = 0x800;
+		break;
+	case 0x2000: //PAD_LD_DOWN
+		ctrl_input->btns[0].value = 0x400;
+		break;
+	case 0x4000: //PAD_LD_LEFT
+		ctrl_input->btns[0].value = 0x100;
+		break;
+	case 0x8000: //PAD_LD_RIGHT
+		ctrl_input->btns[0].value = 0x200;
 		break;
 	default:
 		break;
 	}
+}
+
+void serial_to_axes(char cmd_char[9], struct generic_ctrl *ctrl_input) {
+	ctrl_input->axes[0].value = cmd_char[3];
+	ctrl_input->axes[1].value = cmd_char[4];
+	ctrl_input->axes[2].value = cmd_char[5];
+	ctrl_input->axes[3].value = cmd_char[6];
+}
+
+void serial_to_input(char cmd_char[9], struct generic_ctrl *ctrl_input) {
+	serial_to_btn(cmd_char, ctrl_input);
+	serial_to_axes(cmd_char, ctrl_input);
 }
 
 /**
@@ -507,10 +436,7 @@ void serial_to_input(char cmd_char[8], struct generic_ctrl *ctrl_input) {
  * pair some BT gamepad, wait to sync
  * send bytes to serial port
  */
-void serial_bridge(char bytes[8]) {
-	if(bytes[0] == '0'){
-		adapter_serial_init(ctrl_input, ctrl_output);
-	}
+void serial_bridge(char bytes[9]) {
 	/*
 	 *  serial_to_input changes:
 	 *  ctrl_input->btns[0].value,
@@ -518,7 +444,6 @@ void serial_bridge(char bytes[8]) {
 	 *  with some logic faking the BT gamepad that I have
 	 */
 	serial_to_input(bytes, ctrl_input);
-//	print_ctrl(ctrl_input);
 	adapter_debug_print(ctrl_input); // printf debug
 	if (wired_meta_init(ctrl_output)) {
 		/* Unsupported system */
@@ -555,8 +480,6 @@ void adapter_bridge(struct bt_data *bt_data) {
                 /* Unsupported system */
                 return;
             }
-
-            print_cfg(&config.in_cfg[bt_data->base.pids->out_idx]);
 
             out_mask = adapter_mapping(&config.in_cfg[bt_data->base.pids->out_idx]);
 
