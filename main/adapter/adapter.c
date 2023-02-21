@@ -207,7 +207,6 @@ static void adapter_fb_stop_cb(void* arg) {
     adapter_fb_stop_timer_stop((uint8_t)(uintptr_t)arg);
 }
 
-
 void adapter_serial_init(struct generic_ctrl *ctrl_input,
 		struct generic_ctrl *ctrl_output) {
 	uint32_t *mask_tmp = (uint32_t*) malloc(sizeof(uint32_t) * 4);
@@ -215,13 +214,13 @@ void adapter_serial_init(struct generic_ctrl *ctrl_input,
 	mask_tmp[1] = 0;
 	mask_tmp[2] = 0;
 	mask_tmp[3] = 0;
-	ctrl_input->mask = (const uint32_t *) mask_tmp;
+	ctrl_input->mask = (const uint32_t*) mask_tmp;
 	uint32_t *desc_tmp = (uint32_t*) malloc(sizeof(uint32_t) * 4);
 	desc_tmp[0] = 0x110000FF;
 	desc_tmp[1] = 0;
 	desc_tmp[2] = 0;
 	desc_tmp[3] = 0;
-	ctrl_input->desc = (const uint32_t *) desc_tmp;
+	ctrl_input->desc = (const uint32_t*) desc_tmp;
 
 	struct in_cfg *in_cfg = &config.in_cfg[0];
 	in_cfg->map_size = 1;
@@ -230,13 +229,30 @@ void adapter_serial_init(struct generic_ctrl *ctrl_input,
 	}
 
 	ctrl_input->index = 0;
-	for (int i = 0; i < ADAPTER_MAX_AXES; i++) {
+	for (int i = 0; i < 4; i++) {
 		struct ctrl_meta *meta_tmp = (struct ctrl_meta*) malloc(
 				sizeof(struct ctrl_meta));
 		meta_tmp->neutral = 127;
 		meta_tmp->deadzone = 0;
 		meta_tmp->abs_btn_thrs = 0;
 		meta_tmp->abs_max = 127;
+		meta_tmp->sign = 0;
+		meta_tmp->polarity = i % 2;
+		meta_tmp->size_min = 0;
+		meta_tmp->size_max = 0;
+		meta_tmp->relative = 0;
+		ctrl_input->axes[i].meta = meta_tmp;
+		ctrl_input->axes[i].value = 0;
+		ctrl_input->axes[i].relative = 0;
+		ctrl_input->axes[i].cnt_mask = 0;
+	}
+	for (int i = 4; i < 6; i++) {
+		struct ctrl_meta *meta_tmp = (struct ctrl_meta*) malloc(
+				sizeof(struct ctrl_meta));
+		meta_tmp->neutral = 0;
+		meta_tmp->deadzone = 0;
+		meta_tmp->abs_btn_thrs = 0;
+		meta_tmp->abs_max = 255;
 		meta_tmp->sign = 0;
 		meta_tmp->polarity = 0;
 		meta_tmp->size_min = 0;
