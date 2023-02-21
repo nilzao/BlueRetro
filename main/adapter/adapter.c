@@ -358,7 +358,7 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     }
 }
 
-void serial_to_btn(char cmd_char[9], struct generic_ctrl *ctrl_input) {
+void serial_to_btn(char cmd_char[8], struct generic_ctrl *ctrl_input) {
 	ctrl_input->btns[0].value = 0;
 	ctrl_input->axes[4].value = 0;
 	ctrl_input->axes[5].value = 0;
@@ -418,25 +418,25 @@ void serial_to_btn(char cmd_char[9], struct generic_ctrl *ctrl_input) {
 	}
 }
 
-void serial_to_axes(char cmd_char[9], struct generic_ctrl *ctrl_input) {
-	ctrl_input->axes[0].value = cmd_char[3];
-	ctrl_input->axes[1].value = cmd_char[4];
-	ctrl_input->axes[2].value = cmd_char[5];
-	ctrl_input->axes[3].value = cmd_char[6];
+void serial_to_axes(char cmd_char[8], struct generic_ctrl *ctrl_input) {
+	ctrl_input->axes[0].value = cmd_char[3] - 0x80;
+	ctrl_input->axes[1].value = cmd_char[4] - 0x80;
+	ctrl_input->axes[2].value = cmd_char[5] - 0x80;
+	ctrl_input->axes[3].value = cmd_char[6] - 0x80;
 }
 
-void serial_to_input(char cmd_char[9], struct generic_ctrl *ctrl_input) {
+void serial_to_input(char cmd_char[8], struct generic_ctrl *ctrl_input) {
 	serial_to_btn(cmd_char, ctrl_input);
 	serial_to_axes(cmd_char, ctrl_input);
 }
 
 /**
  * steps to reproduce:
- * build (sdk hw1), flash, monitor
- * pair some BT gamepad, wait to sync
+ * build (sdkconfig configs/hw1/universal-serial), flash
+ * turn off/on esp32
  * send bytes to serial port
  */
-void serial_bridge(char bytes[9]) {
+void serial_bridge(char bytes[8]) {
 	/*
 	 *  serial_to_input changes:
 	 *  ctrl_input->btns[0].value,

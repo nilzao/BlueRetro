@@ -216,14 +216,19 @@ static int32_t bt_host_store_le_keys_on_file(struct bt_host_le_link_keys *data) 
 
 static void serial_task(void *param) {
 	while (1) {
-		char command[9];
-		if (fgets(command, sizeof(command), stdin)) {
-			printf("received: ");
-			for (int i = 0; i < 9; i++) {
-				printf("[0x%02X]", command[i]);
+		char serial_command[9];
+		char command[8];
+		if (fgets(serial_command, sizeof(serial_command), stdin)) {
+			if (serial_command[0] >= 0xB0 && serial_command[0] <= 0xBB
+					&& serial_command[7] == 0xBF) {
+				printf("received: ");
+				for (int i = 0; i < 8; i++) {
+					command[i] = serial_command[i];
+					printf("[0x%02X]", serial_command[i]);
+				}
+				printf("\n");
+				serial_bridge(command);
 			}
-			printf("\n");
-			serial_bridge(command);
 		}
 		// I dunno what's going on, but it works for now:
 		vTaskDelay(16 / portTICK_PERIOD_MS);
