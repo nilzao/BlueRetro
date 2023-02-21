@@ -358,63 +358,29 @@ void IRAM_ATTR adapter_init_buffer(uint8_t wired_id) {
     }
 }
 
+const uint32_t serial_btns_mask[16] = {
+    BIT(PAD_RB_DOWN), BIT(PAD_RB_RIGHT), BIT(PAD_RB_LEFT), BIT(PAD_RB_UP),
+    BIT(PAD_LS), BIT(PAD_RS), BIT(PAD_LM), BIT(PAD_RM),
+    BIT(PAD_MS), BIT(PAD_MM), BIT(PAD_LJ), BIT(PAD_RJ),
+    BIT(PAD_LD_UP), BIT(PAD_LD_DOWN), BIT(PAD_LD_LEFT), BIT(PAD_LD_RIGHT)
+};
+
 void serial_to_btn(char cmd_char[8], struct generic_ctrl *ctrl_input) {
 	ctrl_input->btns[0].value = 0;
 	ctrl_input->axes[4].value = 0;
 	ctrl_input->axes[5].value = 0;
 	int cmd = (cmd_char[1]) << 8 | cmd_char[2];
 	printf("btn cmd[0x%04X]\n", cmd);
-	switch (cmd) {
-	case 0x1: //PAD_RB_DOWN
-		ctrl_input->btns[0].value = 0x40000;
-		break;
-	case 0x2: //PAD_RB_RIGHT
-		ctrl_input->btns[0].value = 0x20000;
-		break;
-	case 0x4: //PAD_RB_LEFT
-		ctrl_input->btns[0].value = 0x10000;
-		break;
-	case 0x8: //PAD_RB_UP
-		ctrl_input->btns[0].value = 0x80000;
-		break;
-	case 0x10: //PAD_LS
-		ctrl_input->btns[0].value = 0x2000000;
-		break;
-	case 0x20: //PAD_RS
-		ctrl_input->btns[0].value = 0x20000000;
-		break;
-	case 0x40: //PAD_LM
-		ctrl_input->axes[4].value = 0xFF;
-		break;
-	case 0x80: //PAD_RM
-		ctrl_input->axes[5].value = 0xFF;
-		break;
-	case 0x100: //PAD_MM
-		ctrl_input->btns[0].value = 0x200000;
-		break;
-	case 0x200: //PAD_MS
-		ctrl_input->btns[0].value = 0x100000;
-		break;
-	case 0x400: //PAD_LJ
-		ctrl_input->btns[0].value = 0x8000000;
-		break;
-	case 0x800: //PAD_RJ
-		ctrl_input->btns[0].value = 0x80000000;
-		break;
-	case 0x1000: //PAD_LD_UP
-		ctrl_input->btns[0].value = 0x800;
-		break;
-	case 0x2000: //PAD_LD_DOWN
-		ctrl_input->btns[0].value = 0x400;
-		break;
-	case 0x4000: //PAD_LD_LEFT
-		ctrl_input->btns[0].value = 0x100;
-		break;
-	case 0x8000: //PAD_LD_RIGHT
-		ctrl_input->btns[0].value = 0x200;
-		break;
-	default:
-		break;
+	for (int i = 0; i < 16; ++i) {
+		if (cmd & BIT(i)) {
+			ctrl_input->btns[0].value = ctrl_input->btns[0].value | serial_btns_mask[i];
+			if (i == 6) {
+				ctrl_input->axes[4].value = 0xFF;
+			}
+			if (i == 7) {
+				ctrl_input->axes[5].value = 0xFF;
+			}
+		}
 	}
 }
 
@@ -443,16 +409,17 @@ void serial_bridge(char bytes[8]) {
 	 *  ctrl_input->axes[0].value and ctrl_input->axes[1].value
 	 *  with some logic faking the BT gamepad that I have
 	 */
+	uint8_t ctrl_idx = bytes[0] & 0xF;
 	serial_to_input(bytes, ctrl_input);
 	adapter_debug_print(ctrl_input); // printf debug
 	if (wired_meta_init(ctrl_output)) {
 		/* Unsupported system */
 		return;
 	}
-	adapter_mapping(&config.in_cfg[0]);
-	adapter_debug_print(&ctrl_output[0]); // printf debug
+	adapter_mapping(&config.in_cfg[ctrl_idx]);
+	adapter_debug_print(&ctrl_output[ctrl_idx]); // printf debug
 	printf("--------------------\n");
-	wired_from_generic(config.out_cfg[0].dev_mode, &ctrl_output[0], &wired_adapter.data[0]);
+	wired_from_generic(config.out_cfg[ctrl_idx].dev_mode, &ctrl_output[ctrl_idx], &wired_adapter.data[ctrl_idx]);
 }
 
 void adapter_bridge(struct bt_data *bt_data) {
